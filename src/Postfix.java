@@ -20,14 +20,14 @@ public class Postfix {
             String next = pfx.substring(0, 1);
 
             if (next.equals(" ")) {
-                if (!number.toString().equals("")) {
+                if (number.length() != 0) {
                     operandStack.push(Double.parseDouble(number.toString()));
                     number.delete(0, number.length());
                 }
             } else if (isNumber(next) || next.equals(".")) {
                 number.append(next);
             } else {
-                if (!number.toString().equals("")) {
+                if (number.length() != 0) {
                     operandStack.push(Double.parseDouble(number.toString()));
                     number.delete(0, number.length());
                 }
@@ -56,30 +56,44 @@ public class Postfix {
         Stack<String> stack = new LinkedListStack<>();
 
         StringBuilder number = new StringBuilder();
+        boolean previousWasNumber = false;
+        boolean previousWasOperator = false;
 
         while (infix.length() > 0) {
             String next = infix.substring(0, 1);
 
             if (next.equals(" ")) {
-                if (!number.toString().equals("")) {
+                if (number.length() != 0) {
+                    previousWasNumber = true;
                     sb.append(" ").append(number.toString());
                     number.delete(0, number.length());
                 }
             } else if (isNumber(next) || next.equals(".")) {
+                if (previousWasNumber)
+                    throw new MalformedInfixExpressionException("There may not be two consecutive numbers");
+                previousWasOperator = false;
                 number.append(next);
             } else {
                 if (number.length() != 0) {
                     sb.append(" ").append(number.toString());
                     number.delete(0, number.length());
                 }
+                previousWasNumber = false;
 
-                if (next.equals("("))
+                if (next.equals("(")) {
+                    previousWasOperator = true;
                     stack.push("(");
-                else if (next.equals(")")) {
+                } else if (next.equals(")")) {
+                    if (previousWasOperator)
+                        throw new MalformedInfixExpressionException("There may not be an operator followed by a closed parenthesis");
                     while (!stack.top().equals("("))
                         sb.append(" ").append(stack.pop());
                     stack.pop();
                 } else if (isOperator(next)) {
+                    if (previousWasOperator)
+                        throw new MalformedInfixExpressionException("There may not be two consecutive operators or " +
+                                "an open parenthesis followed by an operator");
+                    previousWasOperator = true;
                     while (!stack.isEmpty() && !(isLowerPrecedence(stack.top(), next) || (next.equals("^") && stack.top().equals("^"))))
                         sb.append(" ").append(stack.pop());
                     stack.push(next);
