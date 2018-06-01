@@ -1,7 +1,6 @@
 public class Postfix {
 
     private String postfixNotation;
-    private Stack<Double> operandStack;
 
     public Postfix(String postfixNotation) {
         this.postfixNotation = postfixNotation;
@@ -13,7 +12,7 @@ public class Postfix {
 
     public double evaluate() {
         String pfx = postfixNotation;
-        operandStack = new LinkedListStack<>();
+        Stack<Double> operandStack = new LinkedListStack<>();
 
         StringBuilder number = new StringBuilder();
 
