@@ -1,46 +1,53 @@
 public class Postfix {
 
     private String postfixNotation;
-    private Stack<Integer> operandStack;
+    private Stack<Double> operandStack;
 
     public Postfix(String postfixNotation) {
         this.postfixNotation = postfixNotation;
-        operandStack = new LinkedListStack<>();
     }
 
     public Postfix() {
         this("");
     }
 
-    public int evaluate() {
+    public double evaluate() {
         String pfx = postfixNotation;
+        operandStack = new LinkedListStack<>();
+
+        StringBuilder number = new StringBuilder();
 
         while (pfx.length() > 0) {
             String next = pfx.substring(0, 1);
 
             if (next.equals(" ")) {
-                pfx = pfx.substring(1, pfx.length());
-                continue;
-            }
-
-            try {
-                operandStack.push(Integer.parseInt(next));
-            } catch (NumberFormatException e) {
+                if (!number.toString().equals("")) {
+                    operandStack.push(Double.parseDouble(number.toString()));
+                    number.delete(0, number.length());
+                }
+            } else if (isNumber(next) || next.equals(".")) {
+                number.append(next);
+            } else {
+                if (!number.toString().equals("")) {
+                    operandStack.push(Double.parseDouble(number.toString()));
+                    number.delete(0, number.length());
+                }
+                
                 try {
-                    int rhs = operandStack.pop();
-                    int lhs = operandStack.pop();
+                    double rhs = operandStack.pop();
+                    double lhs = operandStack.pop();
                     operandStack.push(calculate(lhs, next, rhs));
-                } catch (StackUnderflowException e1) {
-                    throw new PostfixFormatException("Malformed Postfix Expression");
+                } catch (StackUnderflowException e) {
+                    throw new MalformedPostfixExpressionException();
                 }
             }
             pfx = pfx.substring(1, pfx.length());
         }
 
-        int result = operandStack.pop();
+        double result = operandStack.pop();
 
         if (!operandStack.isEmpty())
-            throw new PostfixFormatException("Malformed Postfix Expression");
+            throw new MalformedPostfixExpressionException();
 
         return result;
     }
@@ -49,44 +56,57 @@ public class Postfix {
         StringBuilder sb = new StringBuilder();
         Stack<String> stack = new LinkedListStack<>();
 
+        StringBuilder number = new StringBuilder();
+
         while (infix.length() > 0) {
             String next = infix.substring(0, 1);
 
             if (next.equals(" ")) {
-                infix = infix.substring(1, infix.length());
-                continue;
-            }
+                if (!number.toString().equals("")) {
+                    sb.append(" ").append(number.toString());
+                    number.delete(0, number.length());
+                }
+            } else if (isNumber(next) || next.equals(".")) {
+                number.append(next);
+            } else {
+                if (number.length() != 0) {
+                    sb.append(" ").append(number.toString());
+                    number.delete(0, number.length());
+                }
 
-            try {
-                int digit = Integer.parseInt(next);
-                sb.append(digit);
-            } catch (NumberFormatException e) {
                 if (next.equals("("))
                     stack.push("(");
                 else if (next.equals(")")) {
                     while (!stack.top().equals("("))
-                        sb.append(stack.pop());
+                        sb.append(" ").append(stack.pop());
                     stack.pop();
                 } else if (isOperator(next)) {
                     while (!stack.isEmpty() && !(isLowerPrecedence(stack.top(), next) || (next.equals("^") && stack.top().equals("^"))))
-                        sb.append(stack.pop());
+                        sb.append(" ").append(stack.pop());
                     stack.push(next);
-                } else throw new InfixFormatException("Malformed Infix Expression");
+                } else throw new MalformedInfixExpressionException();
             }
 
             infix = infix.substring(1, infix.length());
         }
 
-        while (!stack.isEmpty())
-            sb.append(stack.pop());
+        if (number.length() != 0)
+            sb.append(" ").append(number.toString());
 
-        postfixNotation = sb.toString();
+        while (!stack.isEmpty())
+            sb.append(" ").append(stack.pop());
+
+        postfixNotation = sb.toString().trim();
 
         return postfixNotation;
     }
 
+    private boolean isNumber(String str) {
+        return str.matches("[0-9]");
+    }
+
     private boolean isOperator(String str) {
-        return str.equals("+") || str.equals("-") || str.equals("*") || str.equals("/") || str.equals("^");
+        return str.matches("[+\\-*/^]");
     }
 
     private boolean isLowerPrecedence(String top, String next) {
@@ -111,7 +131,7 @@ public class Postfix {
         }
     }
 
-    private int calculate(int lhs, String operator, int rhs) {
+    private double calculate(double lhs, String operator, double rhs) {
         switch (operator) {
             case "+":
                 return lhs + rhs;
@@ -122,9 +142,9 @@ public class Postfix {
             case "/":
                 return lhs / rhs;
             case "^":
-                return (int) Math.pow(lhs, rhs);
+                return Math.pow(lhs, rhs);
             default:
-                throw new PostfixFormatException("Invalid operator: " + operator);
+                throw new MalformedPostfixExpressionException("Invalid operator: " + operator);
         }
     }
 }

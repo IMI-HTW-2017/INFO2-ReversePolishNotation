@@ -8,7 +8,7 @@ public class Calculator {
         Scanner scanner = new Scanner(System.in);
         Postfix pfx = new Postfix();
 
-        pfx.infixToPostfix(scanner.nextLine());
+        System.out.println(pfx.infixToPostfix(scanner.nextLine()));
 
         System.out.println(pfx.evaluate());
     }
