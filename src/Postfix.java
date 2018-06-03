@@ -86,9 +86,13 @@ public class Postfix {
                 } else if (next.equals(")")) {
                     if (previousWasOperator)
                         throw new MalformedInfixExpressionException("There may not be an operator followed by a closed parenthesis");
-                    while (!stack.top().equals("("))
+                    while (!stack.isEmpty() && !stack.top().equals("("))
                         sb.append(" ").append(stack.pop());
-                    stack.pop();
+                    try {
+                        stack.pop();
+                    } catch (StackUnderflowException e) {
+                        throw new MalformedInfixExpressionException("A closed parenthesis without a matching open parenthesis was found");
+                    }
                 } else if (isOperator(next)) {
                     if (previousWasOperator)
                         throw new MalformedInfixExpressionException("There may not be two consecutive operators or " +
@@ -106,8 +110,12 @@ public class Postfix {
         if (number.length() != 0)
             sb.append(" ").append(number.toString());
 
-        while (!stack.isEmpty())
-            sb.append(" ").append(stack.pop());
+        while (!stack.isEmpty()) {
+            if (stack.top().equals("("))
+                throw new MalformedInfixExpressionException("An open parenthesis without a matching closed parenthesis was found");
+            else
+                sb.append(" ").append(stack.pop());
+        }
 
         postfixNotation = sb.toString().trim();
 
